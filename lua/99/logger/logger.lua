@@ -66,7 +66,10 @@ FileSink.__index = FileSink
 --- @param path string
 --- @return LoggerSink
 function FileSink:new(path)
-  local fd, err = vim.uv.fs_open(path, "w", 493)
+  -- Ensure the directory is already there (*thanks Windows*)
+  vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
+
+  local fd, err = vim.uv.fs_open(path, "w", 0)
   if not fd then
     error("unable to file sink: " .. err)
   end
