@@ -441,11 +441,6 @@ end
 function _99.setup(opts)
   opts = opts or {}
 
-  assert(
-    opts.model,
-    "you must specify a model to use 99. Please look at the README.md at github.com/theprimeagen/99 to see how `setup` is called."
-  )
-
   _99_state = _99_State.new()
   _99_state.provider_override = opts.provider
   _99_state.completion = opts.completion

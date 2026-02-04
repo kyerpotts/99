@@ -211,11 +211,28 @@ local function get_lsp_document_symbols(bufnr, cb)
   )
 end
 
+--- @class _99.lsp.ExportPosition
+--- @field name string
+--- @field line number
+--- @field col number
+
+--- @class _99.lsp.ExportMember
+--- @field name string
+--- @field line number
+--- @field col number
+--- @field kind number|nil
+
+--- @class _99.lsp.ExportMetadata
+--- @field kind number|nil
+--- @field members _99.lsp.ExportMember[]|nil
+
+--- @alias _99.lsp.ExportMeta table<string, _99.lsp.ExportMetadata>
+
 --- Extracts export keys and metadata from LSP document symbols.
 ---
 --- @param symbols table|nil LSP document symbols
---- @return { name: string, line: number, col: number }[] export_keys
---- @return table<string, { kind: number|nil, members: { name: string, line: number, col: number, kind: number|nil }[]|nil }>
+--- @return _99.lsp.ExportPosition[] export_keys
+--- @return _99.lsp.ExportMeta export_meta
 local function document_symbols_to_exports(symbols)
   local export_keys = {}
   local export_meta = {}
@@ -547,10 +564,10 @@ end
 --- @param position _99.Point The position of the import path or symbol
 --- @param cb fun(result: string, err: string|nil): nil Callback with formatted string or error
 function Lsp.stringify_definition_exports(source_bufnr, position, cb)
-    resolve_definition_location(source_bufnr, position, function(res)
-        cb(res, "")
-    end)
-    --[[
+  resolve_definition_location(source_bufnr, position, function(res)
+    cb(res, "")
+  end)
+  --[[
   resolve_definition_location(source_bufnr, position, function(location, err)
     if err then
       cb("", err)
@@ -715,9 +732,13 @@ end
 --- @param context table Export context
 --- @param cb fun(hover_results: table<string, string>, err: string|nil): nil
 local function collect_export_hovers(context, cb)
-  get_exports_hover_info(context.bufnr, context.export_keys, function(hover_results)
-    cb(hover_results, nil)
-  end)
+  get_exports_hover_info(
+    context.bufnr,
+    context.export_keys,
+    function(hover_results)
+      cb(hover_results, nil)
+    end
+  )
 end
 
 --- Collects class member hovers for class exports.
@@ -738,10 +759,8 @@ local function collect_class_member_hovers(context, hover_results, cb)
     if is_class then
       local member_positions = meta.members
       if not member_positions and context.filetype == "lua" then
-        member_positions = find_class_member_positions(
-          context.file_lines,
-          export.name
-        )
+        member_positions =
+          find_class_member_positions(context.file_lines, export.name)
       end
 
       if member_positions and #member_positions > 0 then
@@ -783,7 +802,11 @@ end
 --- @param hover_results table<string, string> Export name -> hover info
 --- @param class_member_hovers table<string, table<string, string>>
 --- @return table[] definitions
-local function build_export_definitions(context, hover_results, class_member_hovers)
+local function build_export_definitions(
+  context,
+  hover_results,
+  class_member_hovers
+)
   local definitions = {}
 
   for _, export in ipairs(context.export_keys) do
@@ -886,11 +909,15 @@ local function get_lsp_export_definitions(target_uri, cb)
     end
 
     collect_export_hovers(context, function(hover_results, _)
-      collect_class_member_hovers(context, hover_results, function(member_hovers)
-        local definitions =
-          build_export_definitions(context, hover_results, member_hovers)
-        cb(definitions, context, nil)
-      end)
+      collect_class_member_hovers(
+        context,
+        hover_results,
+        function(member_hovers)
+          local definitions =
+            build_export_definitions(context, hover_results, member_hovers)
+          cb(definitions, context, nil)
+        end
+      )
     end)
   end)
 end
