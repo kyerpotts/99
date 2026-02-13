@@ -3,10 +3,11 @@ local M = {}
 --- directories.  if this is still the case in neovim land, then we will need
 --- to make the _99_state have the project directory.
 --- @return string
-function M.random_file()
+function M.random_file(dir)
+  local directory = dir or (vim.uv.cwd() .. "/tmp")
   return string.format(
-    "%s/tmp/99-%d",
-    vim.uv.cwd(),
+    "%s/99-%d",
+    directory,
     math.floor(math.random() * 10000)
   )
 end
