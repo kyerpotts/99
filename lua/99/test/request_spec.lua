@@ -1,6 +1,7 @@
 -- luacheck: globals describe it assert
 local _99 = require("99")
 local test_utils = require("99.test.test_utils")
+local Prompt = require("99.prompt")
 local eq = assert.are.same
 
 local content = {
@@ -13,9 +14,8 @@ describe("request test", function()
   it("should replace visual selection with AI response", function()
     local p = test_utils.test_setup(content, 2, 1, "lua")
     local state = _99.__get_state()
-    local Prompt = require("99.prompt")
 
-    local context = Prompt.visual(state)
+    local context = Prompt.search(state)
     context:finalize()
 
     local finished_called = false

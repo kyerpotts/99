@@ -217,15 +217,6 @@ local _99 = {
   FATAL = Level.FATAL,
 }
 
---- you can only set those marks after the visual selection is removed
-local function set_selection_marks()
-  vim.api.nvim_feedkeys(
-    vim.api.nvim_replace_termcodes("<Esc>", true, false, true),
-    "x",
-    false
-  )
-end
-
 --- @param cb fun(context: _99.Prompt, o: _99.ops.Opts?): nil
 --- @param name string
 --- @param context _99.Prompt
@@ -360,15 +351,10 @@ end
 function _99.visual(opts)
   opts = process_opts(opts)
   local context = Prompt.visual(_99_state)
-  local function perform_range()
-    set_selection_marks()
-    local range = Range.from_visual_selection()
-    ops.over_range(context, range, opts)
-  end
   if opts.additional_prompt then
-    perform_range()
+    ops.over_range(context, opts)
   else
-    capture_prompt(perform_range, "Visual", context, opts)
+    capture_prompt(ops.over_range, "Visual", context, opts)
   end
 end
 

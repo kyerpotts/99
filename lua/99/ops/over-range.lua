@@ -11,17 +11,17 @@ local Range = geo.Range
 local Point = geo.Point
 
 --- @param context _99.Prompt
---- @param range _99.Range
 --- @param opts? _99.ops.Opts
-local function over_range(context, range, opts)
+local function over_range(context, opts)
   opts = opts or {}
   local logger = context.logger:set_area("visual")
 
+  local data = context:visual_data()
+  local range = data.range
   local top_mark = Mark.mark_above_range(range)
   local bottom_mark = Mark.mark_point(range.buffer, range.end_)
   context.marks.top_mark = top_mark
   context.marks.bottom_mark = bottom_mark
-  context.data.range = range
 
   logger:debug(
     "visual request start",

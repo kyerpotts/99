@@ -7,6 +7,15 @@ local get_id = require("99.id")
 local Range = require("99.geo").Range
 local Time = require("99.time")
 
+--- you can only set those marks after the visual selection is removed
+local function set_selection_marks()
+  vim.api.nvim_feedkeys(
+    vim.api.nvim_replace_termcodes("<Esc>", true, false, true),
+    "x",
+    false
+  )
+end
+
 local filetype_map = {
   typescriptreact = "typescript",
 }
@@ -98,6 +107,9 @@ end
 function Prompt.visual(_99)
   _99:refresh_rules()
 
+  set_selection_marks()
+  local range = Range.from_visual_selection()
+
   local file_type = vim.bo[0].ft
   local buffer = vim.api.nvim_get_current_buf()
   file_type = filetype_map[file_type] or file_type
@@ -115,7 +127,7 @@ function Prompt.visual(_99)
     type = "visual",
     buffer = buffer,
     file_type = file_type,
-    range = Range.zero(),
+    range = range,
   }
   context.logger:debug("99 Request", "method", "visual")
 

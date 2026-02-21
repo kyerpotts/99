@@ -5,6 +5,8 @@ local eq = assert.are.same
 local Levels = require("99.logger.level")
 local Range = require("99.geo").Range
 local Point = require("99.geo").Point
+local visual_fn = require("99.ops.over-range")
+local Prompt = require("99.prompt")
 
 --- @param content string[]
 --- @param start_row number
@@ -43,17 +45,21 @@ local content = {
   "end",
 }
 
+--- @param context _99.Prompt
+local function visual_call_with_range(context, range)
+  context.data.range = range
+  visual_fn(context, {
+    additional_prompt = "test prompt",
+  })
+end
+
 describe("visual", function()
   it("should replace visual selection with AI response", function()
     local p, buffer, range = setup(content, 2, 1, 2, 23)
     local state = _99.__get_state()
-    local visual_fn = require("99.ops.over-range")
+    local context = Prompt.visual(state)
 
-    local context = require("99.prompt").visual(state)
-
-    visual_fn(context, range, {
-      additional_prompt = "test prompt",
-    })
+    visual_call_with_range(context, range)
 
     eq(1, state:active_request_count())
     eq(content, r(buffer))
@@ -80,12 +86,9 @@ describe("visual", function()
     }
     local p, buffer, range = setup(multi_line_content, 2, 1, 4, 17)
     local state = _99.__get_state()
-    local visual_fn = require("99.ops.over-range")
+    local context = Prompt.visual(state)
 
-    local context = require("99.prompt").visual(state)
-    visual_fn(context, range, {
-      additional_prompt = "test prompt",
-    })
+    visual_call_with_range(context, range)
 
     eq(1, state:active_request_count())
     eq(multi_line_content, r(buffer))
@@ -106,13 +109,10 @@ describe("visual", function()
 
   it("should cancel request when stop_all_requests is called", function()
     local p, buffer, range = setup(content, 2, 1, 2, 23)
-    local visual_fn = require("99.ops.over-range")
     local state = _99.__get_state()
-    local context = require("99.prompt").visual(state, 300)
+    local context = Prompt.visual(state)
 
-    visual_fn(context, range, {
-      additional_prompt = "test prompt",
-    })
+    visual_call_with_range(context, range)
 
     eq(content, r(buffer))
 
@@ -134,13 +134,10 @@ describe("visual", function()
 
   it("should handle error cases with graceful failures", function()
     local p, buffer, range = setup(content, 2, 1, 2, 23)
-    local visual_fn = require("99.ops.over-range")
     local state = _99.__get_state()
-    local context = require("99.prompt").visual(state)
+    local context = Prompt.visual(state)
 
-    visual_fn(context, range, {
-      additional_prompt = "test prompt",
-    })
+    visual_call_with_range(context, range)
 
     eq(content, r(buffer))
 
@@ -153,13 +150,10 @@ describe("visual", function()
 
   it("should handle cancelled status gracefully", function()
     local p, buffer, range = setup(content, 2, 1, 2, 23)
-    local visual_fn = require("99.ops.over-range")
     local state = _99.__get_state()
     local context = require("99.prompt").visual(state)
 
-    visual_fn(context, range, {
-      additional_prompt = "test prompt",
-    })
+    visual_call_with_range(context, range)
 
     eq(content, r(buffer))
 
