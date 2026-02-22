@@ -76,7 +76,8 @@ end
 local function is_git_repo(root)
   local git_dir = vim.fs.joinpath(root, ".git")
   local stat = vim.uv.fs_stat(git_dir)
-  return stat ~= nil and stat.type == "directory"
+  -- Check if .git exists (can be directory OR file for worktrees/submodules)
+  return stat ~= nil
 end
 
 --- @param root string
@@ -88,8 +89,12 @@ local function scan_with_git_sync(root)
   )
   local output = vim.fn.system(cmd)
 
-  if vim.v.shell_error ~= 0 or output == "" then
+  if vim.v.shell_error ~= 0 then
     return nil
+  end
+
+  if output == "" then
+    return {}
   end
 
   local files = {}
