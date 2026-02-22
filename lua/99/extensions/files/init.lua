@@ -82,7 +82,10 @@ end
 --- @param root string
 --- @return _99.Files.File[]
 local function scan_with_git_sync(root)
-  local cmd = string.format("git -C %s ls-files --cached --others --exclude-standard", vim.fn.shellescape(root))
+  local cmd = string.format(
+    "git -C %s ls-files --cached --others --exclude-standard",
+    vim.fn.shellescape(root)
+  )
   local output = vim.fn.system(cmd)
 
   if vim.v.shell_error ~= 0 or output == "" then
