@@ -21,8 +21,8 @@ local filetype_map = {
 }
 
 -- luacheck: ignore
---- @alias _99.Prompt.Data _99.Prompt.Data.Search | _99.Prompt.Data.Tutorial | _99.Prompt.Data.Visual
---- @alias _99.Prompt.Operation "visual" | "tutorial" | "search"
+--- @alias _99.Prompt.Data _99.Prompt.Data.Search | _99.Prompt.Data.Tutorial | _99.Prompt.Data.Visual | _99.Prompt.Data.Vibe
+--- @alias _99.Prompt.Operation "visual" | "tutorial" | "search" | "vibe"
 --- @alias _99.Prompt.EndingState "failed" | "success" | "cancelled"
 --- @alias _99.Prompt.State "ready" | "requesting" | _99.Prompt.EndingState
 --- @alias _99.Prompt.Cleanup fun(): nil
@@ -30,6 +30,12 @@ local filetype_map = {
 --- @class _99.Prompt.Data.Search
 --- @field type "search"
 --- @field qfix_items _99.Search.Result[]
+--- @field response string
+
+--- @class _99.Prompt.Data.Vibe
+--- @field type "vibe"
+--- @field response string
+--- @field xfix_items _99.Search.Result[]
 
 --- @class _99.Prompt.Data.Visual
 --- @field type "visual"
@@ -96,10 +102,23 @@ function Prompt.todo(_99)
   assert(false, "not implemented")
 end
 
-function Prompt.vibe(_99, opts)
-  _ = _99
-  _ = opts
-  assert(false, "not implemented")
+--- @param _99 _99.State
+--- @return _99.Prompt
+function Prompt.vibe(_99)
+  _99:refresh_rules()
+
+  --- @type _99.Prompt
+  local context = setmetatable({}, Prompt)
+  set_defaults(context, _99)
+  context.operation = "vibe"
+  context.data = {
+    type = "vibe",
+    response = "",
+    qfix_items = {},
+  }
+  context.logger:debug("99 Request", "method", "vibe")
+
+  return context
 end
 
 --- @param _99 _99.State
@@ -288,6 +307,16 @@ function Prompt:search_data()
   )
   return self.data --[[@as _99.Prompt.Data.Search]]
 end
+
+--- @return _99.Search.Result[]
+function Prompt:qfix_data()
+  assert(
+    self.data.type == "search" or self.data.type == "vibe",
+    "data type is not search or vibe: " .. self.data.type
+  )
+  return self.data.xfix_items
+end
+
 
 function Prompt:stop()
   self:cancel()

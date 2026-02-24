@@ -1,27 +1,14 @@
 local make_prompt = require("99.ops.make-prompt")
 local CleanUp = require("99.ops.clean-up")
-local QFixHelpers = require("99.ops.qfix-helpers")
 
 local make_clean_up = CleanUp.make_clean_up
 local make_observer = CleanUp.make_observer
 
---- @param context _99.Prompt
---- @param response string
-local function create_search_locations(context, response)
-  local qf_list = QFixHelpers.create_qfix_entries(response)
-  context.logger:set_area("search"):debug("qf_list created", "qf_list", qf_list)
-  context.data = {
-    type = "search",
-    qfix_items = qf_list,
-    response = response,
-  }
-
-  if #qf_list > 0 then
-    require("99").qfix(context.xid)
-  else
-    vim.notify("No search results found", vim.log.levels.INFO)
-  end
-end
+--- @class _99.Search.Result
+--- @field filename string
+--- @field lnum number
+--- @field col number
+--- @field text string
 
 --- @param context _99.Prompt
 ---@param opts _99.ops.SearchOpts

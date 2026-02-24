@@ -20,6 +20,7 @@ end
 --- @class _99.Providers.BaseProvider
 --- @field _build_command fun(self: _99.Providers.BaseProvider, query: string, context: _99.Prompt): string[]
 --- @field _get_provider_name fun(self: _99.Providers.BaseProvider): string
+--- @field _get_default_model fun(): string
 local BaseProvider = {}
 
 --- @param callback fun(models: string[]|nil, err: string|nil): nil

@@ -197,6 +197,8 @@ local _99_state
 --- be killed (OpenCode) and any result will be discared
 --- @field clear_previous_requests fun(): nil
 --- clears all previous search and visual operations
+--- @field Extensions _99.Extensions
+--- clears all previous search and visual operations
 local _99 = {
   DEBUG = Level.DEBUG,
   INFO = Level.INFO,
@@ -311,6 +313,19 @@ function _99:rule_from_path(path)
   return Agents.get_rule_by_path(_99_state.rules, path)
 end
 
+--- @param opts? _99.ops.Opts
+--- @return _99.TraceID
+function _99.vibe(opts)
+  local o = process_opts(opts)
+  local context = Prompt.vibe(_99_state)
+  if o.additional_prompt then
+    ops.vibe(context, o)
+  else
+    capture_prompt(ops.vibe, "Vibe", context, o)
+  end
+  return context.xid
+end
+
 --- @param opts? _99.ops.SearchOpts
 --- @return _99.TraceID
 function _99.search(opts)
@@ -402,14 +417,13 @@ function _99.clear_all_marks()
 end
 
 --- @param xid number | nil
-function _99.qfix_search_results(xid)
+function _99.qfix(xid)
   --- @type _99.Prompt
   local entry = _99_state.__request_by_id[xid]
   assert(entry, "qfix_search_results could not find id: " .. xid)
 
-  local data = entry:search_data()
-  local items = data.qfix_items
-  vim.fn.setqflist({}, "r", { title = "99 Search Results", items = items })
+  local items = entry:qfix_data()
+  vim.fn.setqflist({}, "r", { title = "99 Results", items = items })
   vim.cmd("copen")
 end
 
@@ -529,6 +543,9 @@ function _99.__debug()
 end
 
 _99.Providers = Providers
+
+--- @class _99.Extensions
+--- @field Worker _99.Extensions.Worker
 _99.Extensions = {
   Worker = require("99.extensions.work.worker"),
 }

@@ -1,10 +1,26 @@
 local Window = require("99.window")
 local utils = require("99.utils")
 
---- @class _99.Extension.Worker
+--- @class _99.Extensions.Worker
+--- A persistent way to keep track of work.
+---
+--- this will likely be where the most change and focus goes into.  I would like
+--- to take this into worktree territory and be able to swap between stuff super
+--- slick.
+---
+--- Until then, it is going to be a single bit of work that you can provide
+--- the description and then use search to find what is left that needs to be done.
+--- @docs base
+--- @field set_work fun(opts?: _99.WorkOpts): nil
+--- will set the work for the project.  If opts provide a description then no
+--- input capture of work description will be required
+--- @field work fun(): nil
+--- will use _99.search to find what is left to be done for this work item to be
+--- considered done
 local M = {}
 
 --- @class _99.WorkOpts
+--- @docs included
 --- @field description string | nil
 
 --- @return string
@@ -49,7 +65,7 @@ local function set_work_item_cb(success, result)
   end
 end
 
-function M.updated_work()
+function M.update_work()
   local work = M.current_work_item
     or "Put in the description of the work you want to complete"
   Window.capture_input(" Work ", {
@@ -67,7 +83,7 @@ function M.set_work(opts)
   else
     Window.capture_input(" Work ", {
       cb = set_work_item_cb,
-      content = { "Put in the description of the work you want to complete" },
+      content = { M.current_work_item or "Put in the description of the work you want to complete" },
     })
   end
 
@@ -76,7 +92,7 @@ function M.set_work(opts)
 end
 
 --- craft_prompt can be overridden so you can create your own prompt
---- @param worker _99.Extension.Worker
+--- @param worker _99.Extensions.Worker
 --- @return string
 function M.craft_prompt(worker)
   return string.format(
@@ -136,7 +152,7 @@ function M.last_search_results()
     return
   end
 
-  require("99").qfix_search_results(M.last_work_search)
+  require("99").qfix(M.last_work_search)
 end
 
 return M
