@@ -23,6 +23,7 @@ local filetype_map = {
 -- luacheck: ignore
 --- @alias _99.Prompt.Data _99.Prompt.Data.Search | _99.Prompt.Data.Tutorial | _99.Prompt.Data.Visual | _99.Prompt.Data.Vibe
 --- @alias _99.Prompt.Operation "visual" | "tutorial" | "search" | "vibe"
+--- @alias _99.Prompt.QFixOperation "search" | "vibe"
 --- @alias _99.Prompt.EndingState "failed" | "success" | "cancelled"
 --- @alias _99.Prompt.State "ready" | "requesting" | _99.Prompt.EndingState
 --- @alias _99.Prompt.Cleanup fun(): nil
@@ -35,7 +36,7 @@ local filetype_map = {
 --- @class _99.Prompt.Data.Vibe
 --- @field type "vibe"
 --- @field response string
---- @field xfix_items _99.Search.Result[]
+--- @field qfix_items _99.Search.Result[]
 
 --- @class _99.Prompt.Data.Visual
 --- @field type "visual"
@@ -193,6 +194,7 @@ function Prompt.search(_99)
   context.data = {
     type = "search",
     qfix_items = {},
+    response = "",
   }
   context.logger:debug("99 Request", "method", "search")
 
@@ -332,7 +334,7 @@ function Prompt:qfix_data()
     self.data.type == "search" or self.data.type == "vibe",
     "data type is not search or vibe: " .. self.data.type
   )
-  return self.data.xfix_items
+  return self.data.qfix_items
 end
 
 function Prompt:stop()

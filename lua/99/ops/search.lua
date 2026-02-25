@@ -17,7 +17,9 @@ local function create_search_locations(context, response)
   }
 
   if #qf_list > 0 then
-    require("99").qfix(context.xid)
+    require("99").qfix_top({
+      operation = "search",
+    })
   else
     vim.notify("No search results found", vim.log.levels.INFO)
   end

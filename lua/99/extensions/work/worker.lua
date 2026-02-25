@@ -155,13 +155,4 @@ function M.search()
   })
 end
 
-function M.last_search_results()
-  if M.last_work_search == nil then
-    print("no previous search results")
-    return
-  end
-
-  require("99").qfix(M.last_work_search)
-end
-
 return M

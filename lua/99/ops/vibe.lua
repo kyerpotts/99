@@ -17,7 +17,9 @@ local function finish_vibe(context, response)
   }
 
   if #qf_list > 0 then
-    require("99").qfix(context.xid)
+    require("99").qfix_top({
+      operation = "vibe",
+    })
   else
     vim.notify("No search results found", vim.log.levels.INFO)
   end

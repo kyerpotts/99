@@ -1,4 +1,9 @@
+<<<<<<< Updated upstream
 * make _99_state persistent that way i dont lose my shit.
+=======
+* when prompting or searching and a result comes in, the popup became broken with
+  quickfix results... Not sure what the issue is if its a me issue or something else
+>>>>>>> Stashed changes
 * Prompt should generate its prompt via prompt() instead of passing it into the provider as a string...
 * Search Items should be editable.  That way i can mark them off as finished
   * use capture input style to "mark" them as done.  [x] as done, or delete line

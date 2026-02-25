@@ -188,6 +188,7 @@ local _99_state
 --- locations with notes that will be put into your quick fix list.
 --- @field vibe_search fun(opts?: _99.ops.Opts): _99.TraceID | nil
 --- Select a previous search, edit it, then pass it to vibe.
+--- @field vibe fun(opts?: _99.ops.Opts): _99.TraceID | nil
 --- @field visual fun(opts: _99.ops.Opts): _99.TraceID
 --- takes your current selection and sends that along with the prompt provided and replaces
 --- your visual selection with the results
@@ -356,10 +357,7 @@ function _99.vibe_search(opts)
   local o = process_opts(opts)
   local lines = {}
   for i, context in ipairs(searches) do
-    table.insert(
-      lines,
-      string.format("%d: %s", i, context:summary())
-    )
+    table.insert(lines, string.format("%d: %s", i, context:summary()))
   end
 
   Window.capture_select_input("Select Search", {
@@ -454,6 +452,61 @@ end
 --- @field col number
 --- @field text string
 
+--- @class _99.QFixOpts
+--- @field operation? "search" | "vibe"
+
+--- @param opts? _99.QFixOpts
+--- @return "search" | "vibe"
+local function qfix_operation(opts)
+  local operation = (opts and opts.operation) or "search"
+  assert(
+    operation == "search" or operation == "vibe",
+    "opts.operation must be either 'search' or 'vibe'"
+  )
+  return operation
+end
+
+--- @param operation "search" | "vibe"
+--- @return _99.Prompt[]
+local function qfix_requests(operation)
+  local out = {} --[[ @as _99.Prompt[] ]]
+  for _, request in ipairs(_99_state.__request_history) do
+    if request.operation == operation then
+      local ok, items = pcall(request.qfix_data, request)
+      if ok and #items > 0 then
+        table.insert(out, request)
+      end
+    end
+  end
+  return out
+end
+
+--- @param operation "search" | "vibe"
+--- @param index number
+--- @return _99.Prompt | nil
+local function qfix_request_at(operation, index)
+  local requests = qfix_requests(operation)
+  if #requests == 0 then
+    return nil
+  end
+
+  local idx = math.max(1, math.min(index, #requests))
+  _99_state.__qfix_history_idx[operation] = idx
+  return requests[idx]
+end
+
+--- @param request _99.Prompt
+local function open_qfix_request(request)
+  local items = request:qfix_data()
+  if #items == 0 then
+    print("there are no quickfix items to show")
+    return
+  end
+
+  vim.fn.setqflist({}, "r", { title = "99 Results", items = items })
+  vim.cmd("copen")
+end
+
 function _99.stop_all_requests()
   for _, c in pairs(_99_state.__request_by_id) do
     if c.state == "requesting" then
@@ -469,16 +522,56 @@ function _99.clear_all_marks()
   _99_state.__active_marks = {}
 end
 
---- @param xid number
-function _99.qfix(xid)
-  --- @type _99.Prompt
-  local entry = _99_state.__request_by_id[xid]
-  assert(entry, "qfix_search_results could not find id: " .. xid)
+--- @param opts? _99.QFixOpts
+function _99.qfix_top(opts)
+  local operation = qfix_operation(opts)
+  local requests = qfix_requests(operation)
+  if #requests == 0 then
+    print("there are no quickfix items to show")
+    return
+  end
 
-  local items = entry:qfix_data()
-  Logger:set_id(xid):debug("qfix items retrieved", "items", items)
-  vim.fn.setqflist({}, "r", { title = "99 Results", items = items })
-  vim.cmd("copen")
+  local request = qfix_request_at(operation, #requests)
+  assert(request, "failed to retrieve qfix request")
+  open_qfix_request(request)
+end
+
+--- @param opts? _99.QFixOpts
+function _99.qfix_older(opts)
+  local operation = qfix_operation(opts)
+  local requests = qfix_requests(operation)
+  if #requests == 0 then
+    print("there are no quickfix items to show")
+    return
+  end
+
+  local current = _99_state.__qfix_history_idx[operation]
+  if current == 0 then
+    current = #requests
+  end
+
+  local request = qfix_request_at(operation, current - 1)
+  assert(request, "failed to retrieve older qfix request")
+  open_qfix_request(request)
+end
+
+--- @param opts? _99.QFixOpts
+function _99.qfix_newer(opts)
+  local operation = qfix_operation(opts)
+  local requests = qfix_requests(operation)
+  if #requests == 0 then
+    print("there are no quickfix items to show")
+    return
+  end
+
+  local current = _99_state.__qfix_history_idx[operation]
+  if current == 0 then
+    current = #requests
+  end
+
+  local request = qfix_request_at(operation, current + 1)
+  assert(request, "failed to retrieve newer qfix request")
+  open_qfix_request(request)
 end
 
 function _99.clear_previous_requests()

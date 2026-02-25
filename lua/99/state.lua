@@ -38,6 +38,7 @@ end
 --- @field __request_by_id table<number, _99.Prompt>
 --- @field __active_marks _99.Mark[]
 --- @field __tmp_dir string | nil
+--- @field __qfix_history_idx table<"search" | "vibe", number>
 local State = {}
 State.__index = State
 
@@ -55,6 +56,10 @@ local function create()
     __view_log_idx = 1,
     __request_history = {},
     __request_by_id = {},
+    __qfix_history_idx = {
+      search = 0,
+      vibe = 0,
+    },
     tmp_dir = nil,
   }
 end
