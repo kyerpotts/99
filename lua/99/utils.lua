@@ -57,4 +57,21 @@ function M.read_file_json_safe(path)
   end
 end
 
+--- @param obj table
+---@param path string
+function M.write_file_json_safe(obj, path)
+  local ok, fh = pcall(io.open, path, "w")
+  if not ok or not fh then
+    return
+  end
+
+  local obj_str = ""
+  ok, obj_str = pcall(vim.json.encode, obj)
+  if not ok then
+    return
+  end
+
+  pcall(fh.write, fh, obj_str)
+end
+
 return M

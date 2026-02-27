@@ -1,7 +1,9 @@
 local utils = require("99.utils")
 local Agents = require("99.extensions.agents")
 local Extensions = require("99.extensions")
+local Tracking = require("99.state.tracking")
 
+local _99_STATE_FILE = "99-state"
 local function default_completion()
   return { source = nil, custom_rules = {} }
 end
@@ -28,9 +30,7 @@ end
 --- @field display_errors boolean
 --- @field provider_override _99.Providers.BaseProvider?
 --- @field rules _99.Agents.Rules
---- @field __request_history _99.Prompt[]
---- @field __request_by_id table<number, _99.Prompt>
---- @field __active_marks _99.Mark[]
+--- @field tracking _99.State.Tracking
 --- @field __tmp_dir string | nil
 local State = {}
 State.__index = State
@@ -43,8 +43,6 @@ local function create()
     ai_stdout_rows = 3,
     display_errors = false,
     provider_override = nil,
-    __request_history = {},
-    __request_by_id = {},
     tmp_dir = nil,
   }
 end
@@ -63,21 +61,16 @@ end
 --- @param opts _99.Options
 --- @return _99.StateProps | nil
 local function read_state_from_tmp(opts)
-  local state_file = utils.named_tmp_file(get_tmp_dir(opts), "99-state")
-  local fd = vim.uv.fs_open(state_file, "r", 438)
-  if not fd then
-    return nil
-  end
+  local state_file = utils.named_tmp_file(get_tmp_dir(opts), _99_STATE_FILE)
   return utils.read_file_json_safe(state_file) --[[@as _99.StateProps]]
 end
 
 --- @param opts _99.Options
 --- @return _99.State
 function State.new(opts)
-  local props = read_state_from_tmp(opts) or create()
+  local props = create()
   local _99_state = setmetatable(props, State) --[[@as _99.State]]
 
-  _99_state.in_flight_options = opts.in_flight_options or { enable = true }
   _99_state.provider_override = opts.provider
   _99_state.completion = opts.completion or default_completion()
   _99_state.completion.custom_rules = _99_state.completion.custom_rules or {}
@@ -86,8 +79,16 @@ function State.new(opts)
   --- TODO: Prompt overrides would be a great thing, we just have to get there
   --- for now, i am going to have this as just a hardcoded ... thing
   _99_state.prompts = require("99.prompt-settings")
+  _99_state.tracking = Tracking.new(_99_state)
 
   return _99_state
+end
+
+function State:sync()
+  local tracking = self.tracking:serialize()
+  local tmp = self:tmp_dir()
+  local file = utils.named_tmp_file(tmp, _99_STATE_FILE)
+  utils.write_file_json_safe(tracking, file)
 end
 
 --- @return string
@@ -107,75 +108,6 @@ end
 function State:refresh_rules()
   self.rules = Agents.rules(self)
   Extensions.refresh(self)
-end
-
---- @param context _99.Prompt
-function State:track_prompt_request(context)
-  assert(context:valid(), "context is not valid")
-  table.insert(self.__request_history, context)
-  self.__request_by_id[context.xid] = context
-end
-
---- @return number
-function State:completed_prompts()
-  local count = 0
-  for _, entry in ipairs(self.__request_history) do
-    if entry.state ~= "requesting" then
-      count = count + 1
-    end
-  end
-  return count
-end
-
---- @return _99.Prompt[]
-function State:requests()
-  return self.__request_history
-end
-
-function State:clear_history()
-  local keep = {}
-  for _, entry in ipairs(self.__request_history) do
-    if entry.state == "requesting" then
-      table.insert(keep, entry)
-    else
-      self.__request_by_id[entry.xid] = nil
-    end
-  end
-  self.__request_history = keep
-end
-
---- @param mark _99.Mark
-function State:add_mark(mark)
-  table.insert(self.__active_marks, mark)
-end
-
-function State:clear_marks()
-  for _, active_mark in ipairs(self.__active_marks or {}) do
-    active_mark:delete()
-  end
-  self.__active_marks = {}
-end
-
-function State:active_request_count()
-  local count = 0
-  for _, r in pairs(self.__request_history) do
-    if r.state == "requesting" then
-      count = count + 1
-    end
-  end
-  return count
-end
-
---- @param type "search" | "visual" | "tutorial"
---- @return _99.Prompt[]
-function State:request_by_type(type)
-  local out = {} --[[ @as _99.Prompt[] ]]
-  for _, r in ipairs(self.__request_history) do
-    if r.operation == type then
-      table.insert(out, r)
-    end
-  end
-  return out
 end
 
 return State

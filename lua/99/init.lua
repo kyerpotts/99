@@ -431,13 +431,6 @@ function _99.stop_all_requests()
   end
 end
 
-function _99.clear_all_marks()
-  for _, mark in ipairs(_99_state.__active_marks or {}) do
-    mark:delete()
-  end
-  _99_state.__active_marks = {}
-end
-
 function _99.clear_previous_requests()
   _99_state:clear_history()
 end

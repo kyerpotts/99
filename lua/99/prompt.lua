@@ -28,6 +28,10 @@ local filetype_map = {
 --- @alias _99.Prompt.State "ready" | "requesting" | _99.Prompt.EndingState
 --- @alias _99.Prompt.Cleanup fun(): nil
 
+--- @class _99.Prompt.Serialized
+--- @field data _99.Prompt.Data
+--- @field user_prompt string
+
 --- @class _99.Prompt.Data.Search
 --- @field type "search"
 --- @field qfix_items _99.Search.Result[]
@@ -51,7 +55,7 @@ local filetype_map = {
 --- @field xid number TODO: we should probably get rid of this.  The request pattern is not quite correct
 --- @field tutorial string[]
 
---- @class _99.Prompt.Properties
+--- @class _99.Prompt
 --- @field md_file_names string[]
 --- @field model string
 --- @field user_prompt string
@@ -65,8 +69,6 @@ local filetype_map = {
 --- @field marks table<string, _99.Mark>
 --- @field logger _99.Logger
 --- @field xid number
-
---- @class _99.Prompt : _99.Prompt.Properties
 --- @field clean_ups (fun(): nil)[]
 --- @field _99 _99.State
 ---@diagnostic disable-next-line: undefined-doc-name
@@ -105,6 +107,29 @@ end
 function Prompt.todo(_99)
   _ = _99
   assert(false, "not implemented")
+end
+
+--- @param _99 _99.State
+--- @param data _99.Prompt.Serialized
+--- @return _99.Prompt
+function Prompt.deserialize(_99, data)
+    local prompt = setmetatable({
+        _99 = _99,
+        data = data.data,
+        operation = data.data.type,
+        user_prompt = data.user_prompt,
+        xid = get_id(),
+    }, Prompt)
+    assert(prompt:valid(), "prompt is not valid from data")
+    return prompt
+end
+
+--- @return _99.Prompt.Serialized
+function Prompt:serialize()
+    return {
+      data = self.data,
+      user_prompt = self.user_prompt,
+    }
 end
 
 --- @param _99 _99.State
